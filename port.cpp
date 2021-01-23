@@ -1,39 +1,28 @@
-#ifndef PORT_H
-#define PORT_H
-
 #include "string.h"
 #include "field.h"
+#include "port.h"
 
-class Port : public Field {
-private:
-    int range[2];
+#define MASK_SEGMENT 2
 
-public:
-
-    Port(String pattern);
-
-    bool set_value(String val) {
-    	String **range_string;
-    	size_t *range_string_size;
-    	char delimeter = '-';
-    	val.split(&delimeter, range_string, range_string_size);
-        range_string[0]->trim();
-        range_string[1]->trim();
-    	this->range[0] = range_string[0]->to_integer();
-    	this->range[1] = range_string[1]->to_integer();
-    	for (size_t i = 0; i < *range_string_size; i++) {
-    		delete range_string[i];
-    	}
-    	delete range_string_size;
-    	delete range_string;
-        return true;
+bool Port::set_value(String val) {
+	String **range_string;
+	size_t range_string_size;
+	char delimeter = '-';
+	val.split(&delimeter, range_string, &range_string_size);
+    if(range_string_size!=MASK_SEGMENT) {
+        delete[] range_string;
+        return false;
     }
+    String range0=range_string[0]->trim();
+    String range1=range_string[1]->trim();
+	this->range[0] = range0.to_integer();
+	this->range[1] = range1.to_integer();
+	delete[] range_string;
+    return true;
+}
 
-    bool match_value(String val) const {
-    	val.trim();
-        int val_int = val.to_integer();
-    	return (val_int <= range[1] && val_int >= range[0]);
-    }
-};
-
-#endif
+bool Port::match_value(String val) const {
+	String trimmed_val=val.trim();
+    int val_int = trimmed_val.to_integer();
+	return (val_int <= range[1] && val_int >= range[0]);
+}

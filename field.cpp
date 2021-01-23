@@ -1,86 +1,60 @@
 #include "string.h"
+#include "field.h"
 
-enum field_type { IP=0, PORT, GENERIC };
 
-class Field {
-private:
-    String pattern;
-    field_type type;
 
-protected:
+Field::Field(String pattern, field_type type) {
+	this->pattern=pattern;
+	this->type=type;
+}
 
-    Field(String pattern, field_type type) {
-    	this->pattern=pattern;
-    	this->type=type;
-    }
+Field::Field(String pattern) {
+	String trimmed_pattern=pattern.trim();
+    if(trimmed_pattern.equals("src-ip") || trimmed_pattern.equals("dst-ip") ) {
+		this->type=IP;
+	}
+	else {
+		this->type=PORT;
+	}
+	this->pattern=pattern;
+}
 
-public:
+Field::~Field() {
+	
+}
 
-    Field(String pattern) {
-    	pattern.trim();
-        if(pattern.equals("src-ip") || pattern.equals("dst-ip") ) {
-    		this->type=IP;
-    	}
-    	else {
-    		this->type=PORT;
-    	}
-    	this->pattern=pattern;
-    }
+field_type Field::get_type() const {
+	return this->type;
+}
 
-    ~Field() {
-    	delete &pattern;
-    }
+bool Field::set_value(String val) {
+    return false;
+}
 
-    field_type get_type() const {
-    	return this->type;
-    }
+bool Field::match_value(String val) const {
+    return false;
+}
 
-    bool set_value(String val) {
-        return false;
-    }
-
-    bool match_value(String val) const {
-        return false;
-    }
-
-    bool match(String packet) {
-    	String **packet_fields;
-    	char delimeter = ',';
-    	size_t *size;
-    	packet.split(&delimeter,packet_fields,size);
-    	for(size_t i=0;i<*size;i++) {
-    		delimeter='=';
-    		size_t *size_field;
-    		String **field_values;
-    		packet_fields[i]->split(&delimeter,field_values,size_field);
-            field_values[0]->trim();
-    		if (field_values[0]->equals(this->pattern)) {
-    			field_values[1]->trim();
-                bool result = this->match_value(*field_values[1]);
-                for(size_t j=0;j<*size_field;j++) {
-                    delete field_values[j];
-                }
-                delete size_field;
-                delete field_values;
-                for(size_t i=0;i<*size;i++) {
-                    delete packet_fields[i];
-                }
-                delete size;
-                delete packet_fields;
-                return result;
-    		}
-    		for(size_t j=0;j<*size_field;j++) {
-    			delete field_values[j];
-    		}
-    		delete size_field;
-    		delete field_values;
-    	}
-    	for(size_t i=0;i<*size;i++) {
-    		delete packet_fields[i];
-    	}
-    	delete size;
-    	delete packet_fields;
-        return false;
-    }
-
-};
+bool Field::match(String packet) {
+	String **packet_fields;
+	char delimeter = ',';
+	size_t size;
+	packet.split(&delimeter,packet_fields,&size);
+	for(size_t i=0;i<size;i++) {
+		delimeter='=';
+		size_t size_field;
+		String **field_values;
+		packet_fields[i]->split(&delimeter,field_values,&size_field);
+        String trimmed_field0=field_values[0]->trim();
+		if (trimmed_field0.equals(this->pattern)) {
+			String trimmed_field1=field_values[1]->trim();
+            bool result = this->match_value(trimmed_field1);
+            //delete[] field_values;
+            //delete[] packet_fields;
+            return result;
+		}
+		delete[] field_values;
+	}
+	delete[] packet_fields;
+    return false;
+}
